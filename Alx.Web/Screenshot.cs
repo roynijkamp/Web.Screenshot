@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -66,12 +67,27 @@ namespace Alx.Web
                     browser.Width = size.Width;
                     browser.Height = size.Height;
                     browser.ScriptErrorsSuppressed = true;
-                    browser.DocumentCompleted += (sender,args) => DocumentCompleted(sender, args, ref result);
+                    
 
                     while (browser.ReadyState != WebBrowserReadyState.Complete)
                     {
                         Application.DoEvents();
                     }
+                    // extra wacht om het renderen van de pagina af te wachten
+                    //Stopwatch stopwatch = new Stopwatch();
+                    //stopwatch.Start();
+                    //TimeSpan ts = stopwatch.Elapsed;
+
+                    //while (ts.Seconds < 20)
+                    //{
+                    //    ts = stopwatch.Elapsed;
+                    //    Application.DoEvents();
+                    //}
+                    //stopwatch.Stop();
+
+                    //browser.DocumentCompleted += (sender, args) => DocumentCompleted(sender, args, ref result);
+
+                    GrabShot(browser, ref result);
                 }
             });
 
@@ -89,6 +105,45 @@ namespace Alx.Web
             if (browser == null) throw new Exception("Sender should be browser");
             if (browser.Document == null) throw new Exception("Document is missing");
             if (browser.Document.Body == null) throw new Exception("Body is missing");
+
+            //// extra wacht om het renderen van de pagina af te wachten
+            //Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
+            //TimeSpan ts = stopwatch.Elapsed;
+
+            //while (ts.Seconds < 20)
+            //{
+            //    ts = stopwatch.Elapsed;
+            //    Application.DoEvents();
+            //}
+            //stopwatch.Stop();
+
+            using (var bitmap = new Bitmap(browser.Width, browser.Height))
+            {
+                browser.DrawToBitmap(bitmap, new Rectangle(0, 0, browser.Width, browser.Height));
+                image = (Image)bitmap.Clone();
+            }
+        }
+
+        private static void GrabShot(object sender, ref Image image)
+        {
+            var browser = sender as WebBrowser;
+
+            if (browser == null) throw new Exception("Sender should be browser");
+            if (browser.Document == null) throw new Exception("Document is missing");
+            if (browser.Document.Body == null) throw new Exception("Body is missing");
+
+            // extra wacht om het renderen van de pagina af te wachten
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            TimeSpan ts = stopwatch.Elapsed;
+
+            while (ts.Seconds < 10)
+            {
+                ts = stopwatch.Elapsed;
+                Application.DoEvents();
+            }
+            stopwatch.Stop();
 
             using (var bitmap = new Bitmap(browser.Width, browser.Height))
             {
